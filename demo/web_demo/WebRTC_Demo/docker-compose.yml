@@ -22,7 +22,7 @@ services:
 
   # ====================== 后端服务 (挂载本地代码，无Redis) ======================
   backend:
-    image: modelbest-registry.cn-beijing.cr.aliyuncs.com/modelbest/minicpm-web-backend:release_local-202602041743-4f385b
+    image: ghcr.io/openbmb/minicpmo-backend:latest
     container_name: minicpmo-backend
     restart: unless-stopped
     ports:
@@ -48,7 +48,7 @@ services:
 
   # ====================== 前端服务 ======================
   frontend:
-    image: modelbest-registry.cn-beijing.cr.aliyuncs.com/modelbest/three-o-h-100:kol-external-202602041835-b7c0c5
+    image: ghcr.io/openbmb/minicpmo-frontend:latest
     container_name: minicpmo-frontend
     restart: unless-stopped
     ports:

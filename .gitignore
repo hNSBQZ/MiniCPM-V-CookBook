@@ -87,3 +87,6 @@ demo/web_demo/WebRTC_Demo/*.tar
 demo/web_demo/WebRTC_Demo/omini_backend_code/*.tar
 demo/web_demo/WebRTC_Demo/cpp_server/temp_streaming_prefill/
 demo/web_demo/WebRTC_Demo/cpp_server/*.log
+
+# Local issue tracking notes (not for push)
+.issue_notes/

@@ -42,9 +42,24 @@ CPP_REF_AUDIO="$PROJECT_DIR/cpp_server/assets/default_ref_audio.wav"
 # ======================== Python Configuration (overridable via env vars) ========================
 # Specify Python interpreter path (requires >= 3.9, recommended 3.11)
 # Usage: PYTHON_CMD=/path/to/python bash one_click.sh start
-PYTHON_CMD="${PYTHON_CMD:-python}"
+# PYTHON_CMD="${PYTHON_CMD:-python}"
 # pip is auto-derived from the same directory as PYTHON_CMD; can also be overridden separately
-PIP_CMD="${PIP_CMD:-${PYTHON_CMD%/*}/pip}"
+# PIP_CMD="${PIP_CMD:-${PYTHON_CMD%/*}/pip}"
+
+# Auto-detect Python: prefer user-specified PYTHON_CMD, then python3, then python
+if [[ -z "${PYTHON_CMD:-}" ]]; then
+    if command -v python3 &>/dev/null; then
+        PYTHON_CMD="python3"
+    elif command -v python &>/dev/null; then
+        PYTHON_CMD="python"
+    else
+        PYTHON_CMD="python3"  # let preflight_check report the error
+    fi
+fi
+# Use "python -m pip" instead of standalone pip to guarantee consistency
+PIP_CMD="${PIP_CMD:-$PYTHON_CMD -m pip}"
+
+
 # Bypass SSL certificate verification issues during pip install
 PIP_TRUSTED_HOSTS="--trusted-host pypi.org --trusted-host files.pythonhosted.org --trusted-host pypi.python.org --extra-index-url http://pypi.mirrors.ustc.edu.cn/simple --trusted-host pypi.mirrors.ustc.edu.cn"
 
@@ -1044,13 +1059,66 @@ preflight_check() {
     fi
 
     # Python (using specified conda environment)
-    if [[ ! -x "$PYTHON_CMD" ]]; then
+    #if [[ ! -x "$PYTHON_CMD" ]]; then
+    #    err "Python not found: $PYTHON_CMD"
+    #    err "Please install conda environment: conda create -n py311 python=3.11"
+    #    ok_flag=false
+    #else
+    #    ok "Python: $($PYTHON_CMD --version 2>&1) ($PYTHON_CMD)"
+    #fi
+    # Python (using specified conda/venv environment)
+    if ! command -v "$PYTHON_CMD" &>/dev/null; then
         err "Python not found: $PYTHON_CMD"
-        err "Please install conda environment: conda create -n py311 python=3.11"
+        err "Please set PYTHON_CMD=/path/to/python or install Python >= 3.9"
+        err "Example: conda create -n py311 python=3.11"
         ok_flag=false
     else
-        ok "Python: $($PYTHON_CMD --version 2>&1) ($PYTHON_CMD)"
+        # Verify Python version >= 3.9
+        local py_version
+        py_version=$($PYTHON_CMD -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null || echo "0.0")
+        local py_major="${py_version%%.*}"
+        local py_minor="${py_version##*.}"
+        if [[ "$py_major" -lt 3 ]] || { [[ "$py_major" -eq 3 ]] && [[ "$py_minor" -lt 9 ]]; }; then
+            err "Python >= 3.9 is required, but found $py_version ($PYTHON_CMD)"
+            err "Recommended: conda create -n py311 python=3.11"
+            ok_flag=false
+        else
+            # Check if this Python is externally-managed (PEP 668, Ubuntu 23.04+/Debian 12+)
+            # If so, auto-create a venv to avoid "externally-managed-environment" error
+            local stdlib_path
+            stdlib_path=$($PYTHON_CMD -c "import sysconfig; print(sysconfig.get_path('stdlib'))" 2>/dev/null || echo "")
+            local in_venv=false
+            # Already in a venv? (PYTHON_CMD points to a venv or conda env)
+            if $PYTHON_CMD -c "import sys; sys.exit(0 if (hasattr(sys, 'real_prefix') or sys.prefix != sys.base_prefix) else 1)" 2>/dev/null; then
+                in_venv=true
+            fi
+
+            if [[ "$in_venv" == "false" ]] && [[ -n "$stdlib_path" ]] && [[ -f "$stdlib_path/EXTERNALLY-MANAGED" ]]; then
+                local venv_dir="$SCRIPT_DIR/.venv"
+                if [[ -f "$venv_dir/bin/python" ]]; then
+                    info "PEP 668 detected, reusing existing venv: $venv_dir"
+                else
+                    warn "PEP 668 detected (externally-managed Python), auto-creating venv..."
+                    if ! $PYTHON_CMD -m venv "$venv_dir" 2>/dev/null; then
+                        err "Failed to create venv. Please install python3-venv:"
+                        err "  sudo apt install python3-full python3-venv"
+                        ok_flag=false
+                    else
+                        ok "Virtual environment created: $venv_dir"
+                    fi
+                fi
+                # Switch PYTHON_CMD and PIP_CMD to the venv
+                if [[ -f "$venv_dir/bin/python" ]]; then
+                    PYTHON_CMD="$venv_dir/bin/python"
+                    PIP_CMD="$PYTHON_CMD -m pip"
+                    ok "Python (venv): $($PYTHON_CMD --version 2>&1) ($PYTHON_CMD)"
+                fi
+            else
+                ok "Python: $($PYTHON_CMD --version 2>&1) ($PYTHON_CMD)"
+            fi
+        fi
     fi
+
 
     # Node.js (auto-install if not found or version too old)
     local need_node=false

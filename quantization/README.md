@@ -11,6 +11,7 @@ Reduce model storage and computational requirements for resource-constrained env
 | **GGUF** | 4-bit/8-bit | High | Fast | Low | CPU inference, edge devices |
 | **BNB** | 4-bit/8-bit | Medium | Medium | Medium | GPU training and inference |
 | **AWQ** | 4-bit | High | Fast | Low | High-performance GPU inference |
+| **GPTQ** | 4-bit/8-bit | High | Fast | Low | GPU inference, vLLM deployment |
 
 ## Method Details
 
@@ -32,9 +33,16 @@ Reduce model storage and computational requirements for resource-constrained env
 - Optimized for inference, suitable for production environments
 - Ideal choice for high-throughput services
 
+### GPTQ (Generative Pre-trained Transformer Quantization)
+- Post-training weight quantization based on approximate second-order information
+- Supports 4-bit and 8-bit precision
+- Compatible with transformers and vLLM
+- Excellent compression with minimal accuracy loss
+
 ## Selection Guide
 
 - **Mobile/Edge Devices**: GGUF - CPU optimized, minimal memory footprint
 - **Research & Development**: BNB - Easy integration, training-time quantization support
 - **Production Environment**: AWQ - Excellent inference performance, suitable for large-scale deployment
 - **Personal Use**: GGUF - CPU-friendly, low hardware requirements
+- **vLLM Deployment**: GPTQ - Mature ecosystem, wide framework support

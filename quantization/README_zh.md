@@ -11,6 +11,7 @@
 | **GGUF** | 4-bit/8-bit | 高 | 快 | 低 | CPU推理、边缘设备 |
 | **BNB** | 4-bit/8-bit | 中 | 中 | 中 | GPU训练和推理 |
 | **AWQ** | 4-bit | 高 | 快 | 低 | 高性能GPU推理 |
+| **GPTQ** | 4-bit/8-bit | 高 | 快 | 低 | GPU推理、vLLM部署 |
 
 ## 详细说明
 
@@ -32,9 +33,16 @@
 - 针对推理优化，适合生产环境
 - 高吞吐量服务的理想选择
 
+### GPTQ (Generative Pre-trained Transformer Quantization)
+- 基于近似二阶信息的训练后权重量化
+- 支持4-bit和8-bit量化精度
+- 兼容transformers和vLLM推理框架
+- 高压缩比，精度损失极小
+
 ## 选择建议
 
 - **移动/边缘设备**: GGUF - 专为CPU优化，内存占用最小
 - **研究开发**: BNB - 易于集成，支持训练时量化  
 - **生产环境**: AWQ - 推理性能优秀，适合大规模部署
 - **个人使用**: GGUF - CPU友好，硬件要求低
+- **vLLM部署**: GPTQ - 生态成熟，框架支持广泛

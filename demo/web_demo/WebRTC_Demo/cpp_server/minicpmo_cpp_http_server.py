@@ -62,8 +62,7 @@ FIXED_TIMBRE_PATH = os.environ.get("REF_AUDIO", "")  # 默认在启动时从 LLA
 VISION_BACKEND = os.environ.get("VISION_BACKEND", "metal")
 
 # Token2Wav device: "gpu:1"(默认，GPU加速) 或 "cpu"(节省GPU显存，适合16GB内存机型)
-TOKEN2WAV_DEVICE = os.environ.get("TOKEN2WAV_DEVICE", "gpu:1")
-
+TOKEN2WAV_DEVICE = os.environ.get("TOKEN2WAV_DEVICE", "gpu:0") # 默认应该使用gpu:0
 
 def auto_detect_llm_model(model_dir: str) -> str:
     """自动从模型目录检测 LLM GGUF 文件
